@@ -6,6 +6,7 @@ __pycache__/
 venv/
 env/
 ejercicios_master_python/
+lala/
 
 # Cátedra
 rubric_tp5_master.json
