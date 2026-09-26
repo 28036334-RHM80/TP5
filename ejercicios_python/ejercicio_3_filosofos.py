@@ -63,17 +63,12 @@ def filosofo(id, rondas=3):
         # =========================================================================
         # INICIO TODO: Implementar adquisición y liberación segura de tenedores
         # =========================================================================
-        
-        # PISTA DE IMPLEMENTACIÓN ASIMÉTRICA:
-        if id == NUM_FILOSOFOS - 1:
-            primero, segundo = tenedor_der, tenedor_izq
-        else:
-            primero, segundo = tenedor_izq, tenedor_der
-            
-        with tenedores[primero]:
-            with tenedores[segundo]:
-                comer(id)
-                
+        # PISTA: Implementa la solución asimétrica de Dijkstra (romper Espera Circular)
+        # o utiliza un semáforo árbitro para evitar el interbloqueo (Deadlock).
+        #
+        # TODO: Adquiere los tenedores adyacentes de forma segura, invoca comer(id)
+        # y libera los tenedores:
+        pass
         # =========================================================================
         # FIN TODO
         # =========================================================================

@@ -5,7 +5,7 @@ Cátedra: Teoría de Sistemas Operativos (TSO) - Ciclo Lectivo 2026
 Titular: Ing. María Fernanda Vázquez - JTP: Ing. Fabio D. Argañaraz
 ------------------------------------------------------------------------------
 SUITE DE PRUEBAS AUTOMATIZADAS: EJERCICIOS PRÁCTICOS DE PYTHON (TP N° 5)
-Evaluación de Concurrencia, Semáforos, Monitores y Ausencia de Deadlocks
+Evaluación Rigurosa de Concurrencia, Semáforos, Monitores y Ausencia de Deadlocks
 ==============================================================================
 
 Este módulo realiza pruebas dinámicas y funcionales sobre las implementaciones de los
@@ -35,14 +35,12 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Aseguramos que el directorio bajo prueba esté en sys.path
         cls.base_path = os.path.abspath(os.path.dirname(__file__))
         cls.target_path = os.path.join(cls.base_path, TARGET_DIR)
         if cls.target_path not in sys.path:
             sys.path.insert(0, cls.target_path)
             
     def tearDown(self):
-        # Limpieza de imports para evitar efectos colaterales entre tests
         modules_to_clean = [
             'ejercicio_1_sincronizacion',
             'ejercicio_2_oso_abejas',
@@ -58,60 +56,96 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
     # TEST 1: Sincronización Básica y Trazas (A -> B y ABCABC)
     # ------------------------------------------------------------------------
     def test_ejercicio_1_sincronizacion(self):
-        """Verifica que A -> B dé siempre 20 y que ABCABC respete el orden estricto."""
+        """Verifica que A -> B dé 20 y que los semáforos de señalización de ABC estén definidos y activos."""
         try:
             mod = importlib.import_module("ejercicio_1_sincronizacion")
         except Exception as e:
             self.fail(f"No se pudo importar ejercicio_1_sincronizacion: {e}")
 
-        # Test Parte 1: X debe ser 20 invariablemente
+        # 1. Verificación Parte 1: Semáforo de orden A -> B
+        self.assertTrue(
+            hasattr(mod, 'sem_orden_AB') and isinstance(mod.sem_orden_AB, threading.Semaphore),
+            "Falta definir 'sem_orden_AB = threading.Semaphore(0)' en Ejercicio 1 Parte 1."
+        )
+
         mod.X = 199
         hB = threading.Thread(target=mod.proceso_B)
-        hA = threading.Thread(target=mod.proceso_A)
-        # Lanzamos B primero para verificar que espere a A
         hB.start()
+        time.sleep(0.05)
+        # B debe estar bloqueado en acquire() esperando a A
+        self.assertTrue(
+            hB.is_alive(),
+            "Proceso B no esperó a Proceso A (debe llamar sem_orden_AB.acquire() antes de operar)."
+        )
+
+        hA = threading.Thread(target=mod.proceso_A)
         hA.start()
         hA.join(timeout=2.0)
         hB.join(timeout=2.0)
         
-        self.assertFalse(hA.is_alive(), "Proceso A quedó bloqueado (Deadlock en Ejercicio 1 Parte 1).")
-        self.assertFalse(hB.is_alive(), "Proceso B quedó bloqueado (Deadlock en Ejercicio 1 Parte 1).")
+        self.assertFalse(hA.is_alive(), "Proceso A quedó bloqueado en Ejercicio 1 Parte 1.")
+        self.assertFalse(hB.is_alive(), "Proceso B quedó bloqueado en Ejercicio 1 Parte 1.")
         self.assertEqual(mod.X, 20, f"El valor final de X fue {mod.X}; se esperaba exactamente 20.")
 
-        # Test Parte 2: Secuencia estricta
-        if hasattr(mod, 'proceso_emisor_A') and hasattr(mod, 'sem_sig_A'):
-            # Verificamos que los semáforos existan y tengan valores iniciales coherentes
-            self.assertTrue(hasattr(mod, 'sem_sig_A'), "Falta sem_sig_A en Ejercicio 1.")
-            self.assertTrue(hasattr(mod, 'sem_sig_B'), "Falta sem_sig_B en Ejercicio 1.")
-            self.assertTrue(hasattr(mod, 'sem_sig_C'), "Falta sem_sig_C en Ejercicio 1.")
+        # 2. Verificación Parte 2: Semáforos de señalización ABC
+        for sem_name, val_esp in [('sem_sig_A', 1), ('sem_sig_B', 0), ('sem_sig_C', 0)]:
+            self.assertTrue(
+                hasattr(mod, sem_name) and isinstance(getattr(mod, sem_name), threading.Semaphore),
+                f"Falta definir '{sem_name} = threading.Semaphore({val_esp})' en Ejercicio 1 Parte 2."
+            )
+
+        # Prueba de ejecución de la secuencia
+        tA = threading.Thread(target=mod.proceso_emisor_A, args=(2,))
+        tB = threading.Thread(target=mod.proceso_receptor_B, args=(2,))
+        tC = threading.Thread(target=mod.proceso_receptor_C, args=(2,))
+
+        tA.start(); tB.start(); tC.start()
+        tA.join(timeout=3.0); tB.join(timeout=3.0); tC.join(timeout=3.0)
+
+        self.assertFalse(tA.is_alive() or tB.is_alive() or tC.is_alive(), 
+                         "La secuencia ABCABC quedó bloqueada por falta de señales (release) en Ejercicio 1 Parte 2.")
 
     # ------------------------------------------------------------------------
     # TEST 2: El Oso y las Abejas (Productor - Consumidor)
     # ------------------------------------------------------------------------
     def test_ejercicio_2_oso_abejas(self):
-        """Verifica que el tarro no se desborde y que el oso vacíe el tarro al llenarse."""
+        """Verifica que el oso espere pasivamente en sem_oso y que las abejas llenen el tarro."""
         try:
             mod = importlib.import_module("ejercicio_2_oso_abejas")
         except Exception as e:
             self.fail(f"No se pudo importar ejercicio_2_oso_abejas: {e}")
 
         self.assertTrue(hasattr(mod, 'M'), "Falta constante M de capacidad del tarro.")
-        self.assertTrue(hasattr(mod, 'abeja'), "Falta función abeja en ejercicio_2.")
-        self.assertTrue(hasattr(mod, 'oso'), "Falta función oso en ejercicio_2.")
+        self.assertTrue(
+            hasattr(mod, 'sem_oso') and isinstance(mod.sem_oso, threading.Semaphore),
+            "Falta definir 'sem_oso = threading.Semaphore(0)' en Ejercicio 2."
+        )
+        self.assertTrue(
+            hasattr(mod, 'sem_tarro_disponible') and isinstance(mod.sem_tarro_disponible, threading.Semaphore),
+            "Falta definir 'sem_tarro_disponible = threading.Semaphore(1)' en Ejercicio 2."
+        )
+        self.assertTrue(hasattr(mod, 'mutex'), "Falta cerrojo 'mutex' para exclusión mutua en Ejercicio 2.")
 
-        # Configuramos una ejecución controlada de prueba
-        mod.M = 5
+        # 1. El oso debe dormir pasivamente si el tarro está vacío
         mod.tarro_miel = 0
         mod.simulacion_activa = True
+        mod.M = 4
 
         hilo_oso = threading.Thread(target=mod.oso, args=(1,), daemon=True)
-        hilos_abejas = [threading.Thread(target=mod.abeja, args=(i,), daemon=True) for i in range(1, 4)]
-
         hilo_oso.start()
+        time.sleep(0.08)
+
+        self.assertTrue(
+            hilo_oso.is_alive(),
+            "El oso no esperó pasivamente a que el tarro se llene (debe bloquearse con sem_oso.acquire())."
+        )
+
+        # 2. Las abejas deben producir miel y despertar al oso al alcanzar M
+        hilos_abejas = [threading.Thread(target=mod.abeja, args=(i,), daemon=True) for i in range(1, 4)]
         for t in hilos_abejas:
             t.start()
 
-        # El oso debe despertar, comer 1 tarro y terminar en menos de 4 segundos
+        # El oso debe despertar, comer 1 tarro y terminar
         hilo_oso.join(timeout=4.0)
         self.assertFalse(hilo_oso.is_alive(), "El oso nunca despertó o quedó en Deadlock (Ejercicio 2).")
         mod.simulacion_activa = False
@@ -120,7 +154,7 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
     # TEST 3: Cena de los Filósofos (Prevención de Deadlock)
     # ------------------------------------------------------------------------
     def test_ejercicio_3_filosofos(self):
-        """Verifica que los 5 filósofos coman sin producir Deadlock (Espera Circular evitada)."""
+        """Verifica que los 5 filósofos coman sin producir Deadlock (rompiendo espera circular)."""
         try:
             mod = importlib.import_module("ejercicio_3_filosofos")
         except Exception as e:
@@ -141,7 +175,10 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
             self.assertFalse(t.is_alive(), f"Filósofo {t.name} quedó bloqueado por Deadlock o Inanición.")
 
         for i, cant in enumerate(mod.comidas):
-            self.assertGreaterEqual(cant, 2, f"El Filósofo {i} solo comió {cant} veces; debió comer al menos 2.")
+            self.assertGreaterEqual(
+                cant, 2, 
+                f"El Filósofo {i} no comió (comidas = {cant}); debes implementar la adquisición de tenedores e invocar comer(id)."
+            )
 
     # ------------------------------------------------------------------------
     # TEST 4: Barbero Dormilón con Monitores
@@ -157,22 +194,30 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
         
         barberia = mod.BarberiaMonitor(num_sillas_espera=2)
         
-        # Test de sala de espera llena directa
-        # Ocupamos artificialmente las 2 sillas
+        # 1. Test de sala de espera llena directa
         barberia.clientes_esperando = 2
-        resultado = barberia.entrar_cliente(99)
-        self.assertFalse(resultado, "El cliente 99 debió ser rechazado porque la sala de espera estaba llena (2/2).")
-        barberia.clientes_esperando = 0  # Restauramos
+        resultado_lleno = barberia.entrar_cliente(99)
+        self.assertFalse(resultado_lleno, "El cliente 99 debió ser rechazado porque la sala de espera estaba llena (2/2).")
+        barberia.clientes_esperando = 0
 
-        # Test de concurrencia barbero - cliente
+        # 2. Test de atención de clientes:
         t_barbero = threading.Thread(target=mod.hilo_barbero, args=(barberia,), daemon=True)
         t_barbero.start()
 
-        hilos_cli = [threading.Thread(target=mod.hilo_cliente, args=(barberia, i), daemon=True) for i in range(1, 5)]
-        for t in hilos_cli:
-            t.start()
-        for t in hilos_cli:
-            t.join(timeout=4.0)
+        # Lanzamos un cliente para verificar que completar_corte retorne True
+        resultado_atencion = [None]
+        def cliente_test():
+            resultado_atencion[0] = barberia.entrar_cliente(1)
+
+        t_cli = threading.Thread(target=cliente_test, daemon=True)
+        t_cli.start()
+        t_cli.join(timeout=3.5)
+
+        self.assertFalse(t_cli.is_alive(), "El cliente quedó bloqueado indefinidamente en BarberiaMonitor.")
+        self.assertTrue(
+            resultado_atencion[0] is True,
+            "El cliente 1 no fue atendido (entrar_cliente debe retornar True tras completar el corte)."
+        )
 
         barberia.cerrar_barberia()
         t_barbero.join(timeout=2.0)
@@ -190,22 +235,46 @@ class TestTP5ConcurrenciaPython(unittest.TestCase):
 
         self.assertTrue(hasattr(mod, 'lector'), "Falta función lector en ejercicio_5.")
         self.assertTrue(hasattr(mod, 'escritor'), "Falta función escritor en ejercicio_5.")
+        self.assertTrue(hasattr(mod, 'readcounter'), "Falta variable readcounter en Ejercicio 5.")
+        self.assertTrue(hasattr(mod, 'sem_write'), "Falta semáforo sem_write en Ejercicio 5.")
+        self.assertTrue(hasattr(mod, 'mutex'), "Falta semáforo mutex en Ejercicio 5.")
 
-        version_inicial = mod.base_de_datos["version"]
-        
-        # Lanzamos 3 lectores y 1 escritor
-        hilos = []
-        for i in range(1, 4):
-            hilos.append(threading.Thread(target=mod.lector, args=(i, 1)))
-        hilos.append(threading.Thread(target=mod.escritor, args=(1, 1)))
+        mod.readcounter = 0
 
-        for t in hilos:
-            t.start()
-        for t in hilos:
-            t.join(timeout=4.0)
-            self.assertFalse(t.is_alive(), f"El hilo {t.name} quedó bloqueado por Deadlock en Lectores-Escritores.")
+        # 1. Verificación de exclusión mutua activa:
+        # Lanzamos un lector en un hilo y comprobamos que mientras lea, readcounter sea >= 1
+        # y que sem_write esté adquirido (bloqueando a los escritores)
+        t_lec = threading.Thread(target=mod.lector, args=(99, 1), daemon=True)
+        t_lec.start()
 
-        self.assertGreater(mod.base_de_datos["version"], version_inicial, "El escritor debió actualizar la versión de la base de datos.")
+        # Esperamos a que el lector ingrese a la sección crítica (hasta 1.0s)
+        max_muestreos = 20
+        lector_entro = False
+        exclusion_verificada = False
+
+        while max_muestreos > 0 and t_lec.is_alive():
+            if mod.readcounter >= 1:
+                lector_entro = True
+                # Verificamos si sem_write está bloqueado (un escritor no debe poder entrar)
+                puede_escribir = mod.sem_write.acquire(blocking=False)
+                if not puede_escribir:
+                    exclusion_verificada = True
+                else:
+                    mod.sem_write.release()
+                break
+            time.sleep(0.04)
+            max_muestreos -= 1
+
+        t_lec.join(timeout=3.0)
+
+        self.assertTrue(
+            lector_entro,
+            "El lector no incrementó 'readcounter' (debe utilizar 'mutex' y 'readcounter += 1' al ingresar)."
+        )
+        self.assertTrue(
+            exclusion_verificada,
+            "El primer lector no bloqueó 'sem_write' (los escritores no fueron bloqueados mientras había lectores activos)."
+        )
 
 
 def run_tests():

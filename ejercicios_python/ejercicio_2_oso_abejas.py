@@ -48,14 +48,18 @@ def abeja(id_abeja):
 def oso(max_tarros=2):
     global tarro_miel, simulacion_activa
     tarros_comidos = 0
-    while tarros_comidos < max_tarros:
-        # TODO: Esperar pasivamente (bloqueado) hasta que el tarro alcance M porciones
-        # print("🐻 El oso se despierta y se come toda la miel!")
-        # tarro_miel = 0
-        # print("🐻 El oso vuelve a dormir.")
-        # TODO: Avisar a las abejas que el tarro está vacío y disponible nuevamente.
-        tarros_comidos += 1
-        time.sleep(0.1)
+    while tarros_comidos < max_tarros and simulacion_activa:
+        # =====================================================================
+        # TODO PARA EL ESTUDIANTE:
+        # 1. Esperar pasivamente (bloqueado) hasta que una abeja señale que el tarro está lleno:
+        #    sem_oso.acquire()
+        # 2. Comerse toda la miel (tarro_miel = 0).
+        # 3. Incrementar tarros_comidos += 1.
+        # 4. Avisar a las abejas que el tarro está vacío y disponible (sem_tarro_disponible.release()).
+        # =====================================================================
+        pass
+        time.sleep(0.05)
+        break  # Evita bucle infinito si el alumno no implementó el TODO
         
     simulacion_activa = False
 
