@@ -1,0 +1,75 @@
+{
+  "tp_metadata": {
+    "tp_id": "TSO-2026-TP5",
+    "title": "TP N° 5: Sincronización de Procesos",
+    "catedra": "Teoría de Sistemas Operativos - UNJu Facultad de Ingeniería",
+    "version": "1.1.0"
+  },
+  "security": {
+    "algorithm": "SHA-256 + Salted HMAC",
+    "protected": true
+  },
+  "max_score": 100,
+  "exercises": {
+    "ej1_seccion_critica": {
+      "weight": 8,
+      "hash": "bc3d59bf08a70cef23879694236731bcb7d8806bd2d0ca52ccff8cccd35a32ca",
+      "feedback": "Consultar Silberschatz Cap. 6.2 (o Diapositivas U5)."
+    },
+    "ej2_hardware": {
+      "weight": 8,
+      "hash": "5fc4551f55a0587a592c56d49700e82aa033dc03263d966e8bb4c2d249c5510f",
+      "feedback": "Consultar Silberschatz Cap. 6.3 (o Diapositivas U5)."
+    },
+    "ej3_semaforos_tipo": {
+      "weight": 8,
+      "hash": "58583a03c4205bc6e1266e6cc5f4b0fb0afbbfbb46d4283f53b2b6c4add6d362",
+      "feedback": "Consultar Silberschatz Cap. 6.6 (o Diapositivas U5)."
+    },
+    "ej4_semaforos_ops": {
+      "weight": 8,
+      "hash": "63f80c283e20e1606e79fa49bc1502c610e07df1257deb4df0003c82b4d1f9ad",
+      "feedback": "Consultar Silberschatz Cap. 6.6 (o Diapositivas U5)."
+    },
+    "ej5_monitores": {
+      "weight": 8,
+      "hash": "35581f667391f7dc20317628219b33a7b5524b4f4089df11f5a768f48aafe463",
+      "feedback": "Consultar Silberschatz Cap. 6.7 (o Diapositivas U5)."
+    },
+    "ej6_productor_consumidor": {
+      "weight": 8,
+      "hash": "f2515a104f18f698b63e870c4d5bc4a371b3003cee56cd0bcb80551d5fcef2d5",
+      "feedback": "Consultar Silberschatz Cap. 6.6 (o Diapositivas U5)."
+    },
+    "ej7_filosofos": {
+      "weight": 8,
+      "hash": "d7ef14b91fab3342cd8ce9f495bdff870518c151d73a6017dd1ea015c4fa4281",
+      "feedback": "Consultar Silberschatz Cap. 6.6 (o Diapositivas U5)."
+    },
+    "ej8_python_lock": {
+      "weight": 9,
+      "hash": "a213d65b2bae8158027793bb79498be88dd911e3f4df79edfc67606e4f591049",
+      "feedback": "Consultar Python threading docs (o Diapositivas U5)."
+    },
+    "ej9_python_condition": {
+      "weight": 9,
+      "hash": "1b1ca6a4c87bb8a7c62b924453c267956dd2614d4eec5848d0ef58565421496e",
+      "feedback": "Consultar Python threading docs (o Diapositivas U5)."
+    },
+    "ej10_transacciones": {
+      "weight": 8,
+      "hash": "ba43e52d4daeb17f395d805dd856ae17a34a0b702e19f1a2b47a9ef6aba8d3c8",
+      "feedback": "Consultar Silberschatz Cap. 6.9 (o Diapositivas U5)."
+    },
+    "ej11_peterson": {
+      "weight": 9,
+      "hash": "8054b5fc7e1ba553f7b4d1c6e38ffa1d8266be534cfe065a5f9ab9165dd05413",
+      "feedback": "Consultar Silberschatz Cap. 6.3 (o Diapositivas U5)."
+    },
+    "ej12_semaforo_cola": {
+      "weight": 9,
+      "hash": "7cf159a112bda91374426577b3365426a59b4a13a28bcaf7949297d363a302b5",
+      "feedback": "Consultar Silberschatz Cap. 6.6 (o Diapositivas U5)."
+    }
+  }
+}

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP N° 5: Sincronización de Procesos | TSO UNJu</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SortableJS (Drag & Drop) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="branding">
+                <h1>TSO UNJu FI - TP5</h1>
+                <p>Sincronización de Procesos</p>
+            </div>
+            <div class="controls">
+                <button id="theme-toggle" class="btn-glass" title="Cambiar Tema">🌓</button>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <span id="progress-text">0% Completado</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Datos del Alumno -->
+        <section class="card student-info">
+            <h2>📝 Datos del Alumno</h2>
+            <div class="input-group">
+                <label for="student-name">Nombre y Apellido:</label>
+                <input type="text" id="student-name" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="input-group">
+                <label for="student-lu">Libreta Universitaria / Legajo:</label>
+                <input type="text" id="student-lu" placeholder="Ej. L-12345">
+            </div>
+        </section>
+
+        <!-- Simulador: Condición de Carrera -->
+        <section class="card simulator-card" id="race-simulator">
+            <h2>🏎️ Laboratorio: Condición de Carrera</h2>
+            <p>Observa qué sucede cuando dos procesos intentan sumar +1 a la misma variable compartida simultáneamente sin usar mecanismos de sincronización.</p>
+            <div class="simulator-controls">
+                <button id="btn-race-nolock" class="btn-primary" style="background: #ef4444;">Ejecutar SIN Lock</button>
+                <button id="btn-race-lock" class="btn-secondary" style="background: #10b981;">Ejecutar CON Lock</button>
+            </div>
+            <div class="race-visualization">
+                <div class="race-box">
+                    <h3>Contador Compartido</h3>
+                    <div id="race-counter" class="counter-display">0</div>
+                    <div id="race-expected" class="counter-expected">Esperado: 0</div>
+                </div>
+                <div class="race-processes">
+                    <div class="process-box" id="proc-a">Proceso A <br><small>+50</small></div>
+                    <div class="process-box" id="proc-b">Proceso B <br><small>+50</small></div>
+                </div>
+            </div>
+            <div id="race-log" class="race-log"></div>
+        </section>
+
+        <!-- Simulador: Productor/Consumidor (Paso a Paso & Buffer Acotado) -->
+        <section class="card simulator-card" id="producer-consumer-simulator">
+            <h2>🔬 Laboratorio: Productor - Consumidor (Buffer Acotado Paso a Paso)</h2>
+            <p>El problema clásico de sincronización con <strong>Buffer Circular Acotado</strong> (Silberschatz Cap. 6.6 y Diapositiva 24 de Cátedra). Controla la ejecución <strong>paso a paso</strong> para observar las llamadas atómicas a <code>wait()</code> y <code>signal()</code>, la manipulación de los punteros <code>in</code>/<code>out</code>, y el bloqueo pasivo de hilos cuando el buffer se llena o se vacía.</p>
+            
+            <!-- Selector de Escenario Didáctico -->
+            <div class="pc-scenario-selector">
+                <span class="selector-label">Escenario Didáctico:</span>
+                <div class="scenario-buttons">
+                    <button id="btn-pc-mode-basic" class="btn-scenario active" data-scenario="basic">
+                        📦 1. Ciclo Normal (Producción & Consumo)
+                    </button>
+                    <button id="btn-pc-mode-overflow" class="btn-scenario" data-scenario="overflow">
+                        🛑 2. Buffer Lleno (Bloqueo en 'empty')
+                    </button>
+                    <button id="btn-pc-mode-underflow" class="btn-scenario" data-scenario="underflow">
+                        ⏳ 3. Buffer Vacío (Bloqueo en 'full')
+                    </button>
+                    <button id="btn-pc-mode-contention" class="btn-scenario" data-scenario="contention">
+                        ⚔️ 4. Competencia Mutex (Exclusión Mutua)
+                    </button>
+                    <button id="btn-pc-mode-free" class="btn-scenario" data-scenario="free">
+                        🎮 5. Modo Libre Interactivo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controles de Ejecución y Velocidad -->
+            <div class="simulator-controls pc-controls-bar">
+                <button id="btn-pc-step" class="btn-primary" style="background: #2563eb; font-weight: 700;">
+                    ⏭️ Avanzar Paso (<span id="pc-step-indicator">Paso 0 / 10</span>)
+                </button>
+                <button id="btn-pc-auto" class="btn-secondary" style="background: #10b981;">
+                    ▶️ Reproducción Automática
+                </button>
+                <button id="btn-pc-prev" class="btn-secondary" style="background: #4b5563;" disabled>
+                    ⏮️ Paso Anterior
+                </button>
+                <button id="btn-pc-reset" class="btn-secondary" style="background: #6b7280;">
+                    🔄 Reiniciar Buffer
+                </button>
+                
+                <!-- Selector de Velocidad -->
+                <div class="pc-speed-control">
+                    <span class="speed-label">⏱️ Velocidad:</span>
+                    <button class="btn-pc-speed" data-speed="1800">🐢 Lento</button>
+                    <button class="btn-pc-speed active" data-speed="1000">🚶 Normal</button>
+                    <button class="btn-pc-speed" data-speed="400">⚡ Rápido</button>
+                </div>
+            </div>
+
+            <!-- Controles del Modo Libre (visibles cuando el modo libre está seleccionado) -->
+            <div id="pc-free-controls" class="pc-free-controls-bar" style="display: none;">
+                <div class="free-controls-group">
+                    <span class="free-group-title">🏭 Hilo Productor:</span>
+                    <button id="btn-pc-free-produce-step" class="btn-secondary" style="border-color: #3b82f6; color: #3b82f6; font-weight: 600;">
+                        ➕ Micro-Paso Productor
+                    </button>
+                    <button id="btn-pc-free-produce-full" class="btn-primary" style="background: #2563eb;">
+                        📦 Ciclo Productor Completo
+                    </button>
+                </div>
+                <div class="free-controls-group">
+                    <span class="free-group-title">🛒 Hilo Consumidor:</span>
+                    <button id="btn-pc-free-consume-step" class="btn-secondary" style="border-color: #10b981; color: #10b981; font-weight: 600;">
+                        ➖ Micro-Paso Consumidor
+                    </button>
+                    <button id="btn-pc-free-consume-full" class="btn-primary" style="background: #059669;">
+                        🍽️ Ciclo Consumidor Completo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de Hilos / Procesos (Productor y Consumidor) -->
+            <div class="pc-threads-panel">
+                <div class="pc-thread-card" id="pc-card-producer">
+                    <div class="pc-thread-header">
+                        <span class="pc-thread-icon">🏭</span>
+                        <h4>Productor (P1)</h4>
+                        <span class="pc-thread-state-badge ready" id="pc-producer-state">Listo</span>
+                    </div>
+                    <div class="pc-thread-body">
+                        <div class="pc-thread-metric">Ítem actual: <strong id="pc-producer-item">—</strong></div>
+                        <div class="pc-thread-metric">Puntero de inserción: <code>in = <span id="pc-in-display">0</span></code></div>
+                    </div>
+                </div>
+
+                <div class="pc-thread-card" id="pc-card-consumer">
+                    <div class="pc-thread-header">
+                        <span class="pc-thread-icon">🛒</span>
+                        <h4>Consumidor (C1)</h4>
+                        <span class="pc-thread-state-badge idle" id="pc-consumer-state">Esperando</span>
+                    </div>
+                    <div class="pc-thread-body">
+                        <div class="pc-thread-metric">Último ítem retirado: <strong id="pc-consumer-item">—</strong></div>
+                        <div class="pc-thread-metric">Puntero de extracción: <code>out = <span id="pc-out-display">0</span></code></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualización del Buffer Circular Acotado -->
+            <div class="pc-buffer-wrapper">
+                <div class="pc-buffer-header">
+                    <span class="pc-buffer-title">🗄️ Buffer Circular Acotado (N = 5 slots)</span>
+                    <span class="pc-buffer-stats" id="pc-buffer-stats">Ocupación: 0 / 5 (0%)</span>
+                </div>
+                <div class="buffer-visualization pc-buffer-grid" id="buffer-container">
+                    <!-- 5 Slots con punteros 'in' y 'out' dinámicos -->
+                </div>
+            </div>
+
+            <!-- Estado de Semáforos y Colas de Procesos Bloqueados -->
+            <div class="pc-semaphores-grid">
+                <div class="pc-sem-card" id="sem-card-mutex">
+                    <div class="sem-card-top">
+                        <span class="sem-name">🔒 Mutex (Binario)</span>
+                        <span class="sem-value-badge green" id="sem-mutex-val">1</span>
+                    </div>
+                    <div class="sem-role">Exclusión mutua para modificar el buffer</div>
+                    <div class="sem-queue-box">
+                        <span class="queue-label">Cola Bloqueados:</span>
+                        <div class="queue-chips" id="sem-mutex-queue">
+                            <span class="empty-queue-hint">Vacía (ninguno)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pc-sem-card" id="sem-card-empty">
+                    <div class="sem-card-top">
+                        <span class="sem-name">🟩 Empty (Contador)</span>
+                        <span class="sem-value-badge blue" id="sem-empty-val">5</span>
+                    </div>
+                    <div class="sem-role">Espacios libres disponibles en el buffer</div>
+                    <div class="sem-queue-box">
+                        <span class="queue-label">Cola Bloqueados:</span>
+                        <div class="queue-chips" id="sem-empty-queue">
+                            <span class="empty-queue-hint">Vacía (ninguno)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pc-sem-card" id="sem-card-full">
+                    <div class="sem-card-top">
+                        <span class="sem-name">🟦 Full (Contador)</span>
+                        <span class="sem-value-badge purple" id="sem-full-val">0</span>
+                    </div>
+                    <div class="sem-role">Ítems listos para ser consumidos</div>
+                    <div class="sem-queue-box">
+                        <span class="queue-label">Cola Bloqueados:</span>
+                        <div class="queue-chips" id="sem-full-queue">
+                            <span class="empty-queue-hint">Vacía (ninguno)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner Explicativo del Paso Actual con Código C -->
+            <div id="pc-step-detail" class="philo-step-banner pc-step-banner">
+                <div class="pc-step-top">
+                    <span class="step-num-pill" id="pc-step-pill">Paso 0</span>
+                    <span class="pc-code-badge" id="pc-code-badge">Inicialización</span>
+                </div>
+                <div class="step-text" id="pc-step-text">
+                    Buffer inicializado y vacío. Pulsa <strong>Avanzar Paso</strong> para iniciar la simulación guiada o elige otro escenario didáctico.
+                </div>
+            </div>
+
+            <div id="pc-status-alert" class="philo-alert">Estado del Sistema: Buffer vacío. Semáforo empty = 5, full = 0, mutex = 1.</div>
+            <div id="pc-log" class="race-log"></div>
+        </section>
+
+        <!-- Simulador: Filósofos Comensales (Paso a Paso & Deadlock) -->
+        <section class="card simulator-card" id="philosophers-simulator">
+            <h2>🍝 Laboratorio: La Cena de los Filósofos (Ejecución Paso a Paso)</h2>
+            <p>5 filósofos alternan entre pensar y comer. Cada filósofo necesita <strong>2 tenedores</strong> adyacentes para poder comer. Ejecuta la simulación <strong>paso a paso</strong> para observar la adquisición de recursos y el surgimiento del interbloqueo (*deadlock*) por espera circular vs. la prevención asimétrica.</p>
+            
+            <!-- Selector de Escenario -->
+            <div class="philo-scenario-selector">
+                <span class="selector-label">Escenario a Simular:</span>
+                <div class="scenario-buttons">
+                    <button id="btn-philo-mode-deadlock" class="btn-scenario active" data-scenario="deadlock">
+                        💀 Interbloqueo Simétrico (Deadlock)
+                    </button>
+                    <button id="btn-philo-mode-safe" class="btn-scenario" data-scenario="safe">
+                        🛡️ Solución Asimétrica (Sin Deadlock)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controles de Ejecución Paso a Paso -->
+            <div class="simulator-controls philo-controls-bar">
+                <button id="btn-philo-step" class="btn-primary" style="background: #2563eb; font-weight: 700;">
+                    ⏭️ Avanzar Paso (<span id="philo-step-indicator">Paso 0 / 12</span>)
+                </button>
+                <button id="btn-philo-auto" class="btn-secondary" style="background: #10b981;">
+                    ▶️ Reproducción Automática
+                </button>
+                <button id="btn-philo-prev" class="btn-secondary" style="background: #4b5563;" disabled>
+                    ⏮️ Paso Anterior
+                </button>
+                <button id="btn-philo-reset" class="btn-secondary" style="background: #6b7280;">
+                    🔄 Reiniciar Mesa
+                </button>
+            </div>
+
+            <!-- Panel de Condiciones de Coffman -->
+            <div class="coffman-panel">
+                <div class="coffman-title">Condiciones de Coffman para Interbloqueo (Deadlock):</div>
+                <div class="coffman-badges">
+                    <span class="coffman-badge active" id="coffman-cond-1" title="Un tenedor solo puede ser usado por un filósofo a la vez">
+                        🔒 1. Exclusión Mutua
+                    </span>
+                    <span class="coffman-badge" id="coffman-cond-2" title="Un filósofo retiene un tenedor mientras solicita el adyacente">
+                        ✋ 2. Retención y Espera
+                    </span>
+                    <span class="coffman-badge active" id="coffman-cond-3" title="Los tenedores no pueden ser expropiados a la fuerza">
+                        🚫 3. No Apropiación
+                    </span>
+                    <span class="coffman-badge" id="coffman-cond-4" title="Existe una cadena circular cerrada de solicitudes">
+                        🔄 4. Espera Circular
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mesa Circular -->
+            <div class="philosophers-table-container">
+                <div class="table-round">
+                    <div class="table-center">🍝 Mesa Compartida</div>
+                    <div class="philo-node philo-pos-0" id="philo-0" title="Click para inspeccionar P0"><span class="philo-icon">🤔</span><span class="philo-name">Filósofo 0</span><span class="philo-state">Pensando</span></div>
+                    <div class="philo-node philo-pos-1" id="philo-1" title="Click para inspeccionar P1"><span class="philo-icon">🤔</span><span class="philo-name">Filósofo 1</span><span class="philo-state">Pensando</span></div>
+                    <div class="philo-node philo-pos-2" id="philo-2" title="Click para inspeccionar P2"><span class="philo-icon">🤔</span><span class="philo-name">Filósofo 2</span><span class="philo-state">Pensando</span></div>
+                    <div class="philo-node philo-pos-3" id="philo-3" title="Click para inspeccionar P3"><span class="philo-icon">🤔</span><span class="philo-name">Filósofo 3</span><span class="philo-state">Pensando</span></div>
+                    <div class="philo-node philo-pos-4" id="philo-4" title="Click para inspeccionar P4"><span class="philo-icon">🤔</span><span class="philo-name">Filósofo 4</span><span class="philo-state">Pensando</span></div>
+                    
+                    <div class="fork-node fork-pos-0" id="fork-0" title="Tenedor 0">🍴 T0</div>
+                    <div class="fork-node fork-pos-1" id="fork-1" title="Tenedor 1">🍴 T1</div>
+                    <div class="fork-node fork-pos-2" id="fork-2" title="Tenedor 2">🍴 T2</div>
+                    <div class="fork-node fork-pos-3" id="fork-3" title="Tenedor 3">🍴 T3</div>
+                    <div class="fork-node fork-pos-4" id="fork-4" title="Tenedor 4">🍴 T4</div>
+                </div>
+            </div>
+
+            <!-- Banner Explicativo del Paso Actual -->
+            <div id="philo-step-detail" class="philo-step-banner">
+                <span class="step-num-pill" id="step-pill">Paso 0</span>
+                <span class="step-text" id="step-text">Mesa lista. Pulsa <strong>Avanzar Paso</strong> para iniciar la ejecución guiada o activa la reproducción automática.</span>
+            </div>
+
+            <div id="philo-status-alert" class="philo-alert">Estado del Sistema: Mesa en reposo. Todos los filósofos están pensando.</div>
+            <div id="philo-log" class="race-log"></div>
+        </section>
+
+        <!-- Simulador: Lectores - Escritores -->
+        <section class="card simulator-card" id="rw-simulator">
+            <h2>📖 Laboratorio: Lectores - Escritores (Concurrencia vs. Exclusión Mutua)</h2>
+            <p>Basado en el algoritmo clásico de <strong>Courtois et al.</strong> (Diapositiva 26 de la Cátedra). Múltiples lectores pueden consultar la base de datos simultáneamente, pero los escritores requieren acceso exclusivo total. Si un escritor está escribiendo, ningún lector ni escritor puede entrar.</p>
+            <div class="simulator-controls rw-controls">
+                <button id="btn-add-reader" class="btn-primary" style="background: #3b82f6;">➕ Entrada Lector</button>
+                <button id="btn-remove-reader" class="btn-secondary">➖ Salida Lector</button>
+                <button id="btn-add-writer" class="btn-primary" style="background: #ef4444;">➕ Entrada Escritor</button>
+                <button id="btn-remove-writer" class="btn-secondary">➖ Salida Escritor</button>
+                <button id="btn-rw-reset" class="btn-secondary" style="background: #6b7280;">🔄 Reiniciar BD</button>
+            </div>
+            
+            <div class="rw-main-layout">
+                <div class="rw-db-box" id="rw-db-display">
+                    <div class="rw-db-header">
+                        <span class="rw-db-icon">🗄️</span>
+                        <h3>Base de Datos Compartida</h3>
+                    </div>
+                    <div id="rw-db-state-badge" class="rw-badge idle">ESTADO: LIBRE (0 accesos)</div>
+                    <div class="rw-inside-container">
+                        <div class="rw-subpanel">
+                            <h4>Lectores Activos (<span id="rw-active-readers-count">0</span>)</h4>
+                            <div id="rw-active-readers-list" class="rw-chips-list">
+                                <span class="rw-empty-hint">Ningún lector en este momento</span>
+                            </div>
+                        </div>
+                        <div class="rw-subpanel">
+                            <h4>Escritor Activo</h4>
+                            <div id="rw-active-writer-display" class="rw-chips-list">
+                                <span class="rw-empty-hint">Ningún escritor activo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rw-queues-box">
+                    <div class="rw-queue-card">
+                        <h4>⏳ Lectores en Espera (<span id="rw-wait-readers-count">0</span>)</h4>
+                        <div id="rw-wait-readers-list" class="rw-chips-list">
+                            <span class="rw-empty-hint">Cola vacía</span>
+                        </div>
+                    </div>
+                    <div class="rw-queue-card">
+                        <h4>⏳ Escritores en Espera (<span id="rw-wait-writers-count">0</span>)</h4>
+                        <div id="rw-wait-writers-list" class="rw-chips-list">
+                            <span class="rw-empty-hint">Cola vacía</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="semaphore-status">
+                <div class="status-badge" id="rw-sem-mutex">mutex: 1 (Libre)</div>
+                <div class="status-badge" id="rw-sem-write">write: 1 (Libre)</div>
+                <div class="status-badge" id="rw-counter-readers">readcounter: 0</div>
+            </div>
+
+            <div id="rw-alert" class="philo-alert">Sistema inicializado. Base de datos disponible para lectura o escritura.</div>
+            <div id="rw-log" class="race-log"></div>
+        </section>
+
+        <div id="exercises-container">
+            <!-- Ejercicios cargados por JS -->
+        </div>
+
+        <div class="export-section">
+            <button id="btn-export" class="btn-export" disabled>Exportar Respuestas (.json)</button>
+            <p class="export-hint">Completa todos los ejercicios y tus datos para habilitar la descarga.</p>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
