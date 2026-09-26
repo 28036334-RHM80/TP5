@@ -28,8 +28,8 @@ Para resolver los ejercicios interactivos, deberás basarte en la teoría vista 
 
 ## 🚀 Guía de Autoevaluación y Laboratorios Prácticos
 
-### 1️⃣ Laboratorios de Código (Python) y Modelado
-En este TP no solo evaluarás la teoría, sino que aplicarás los conceptos en código y en simuladores web interactivos:
+### 1️⃣ Estructura del Trabajo Práctico
+En este TP no solo evaluarás la teoría, sino que aplicarás los conceptos en simuladores web interactivos y en código concurrente real en Python:
 
 - **Simuladores Interactivos en `index.html`:**
   - 🏎️ *Condición de Carrera:* Visualiza la inconsistencia de variables compartidas sin sincronización vs. Locks.
@@ -57,17 +57,64 @@ En este TP no solo evaluarás la teoría, sino que aplicarás los conceptos en c
    cd TP5
    ```
 
-### 3️⃣ Resolver el Laboratorio Interactivo
+### 3️⃣ Resolver la Evaluación Conceptual Web (`index.html`)
 1. Abre el archivo `index.html` en cualquier navegador web.
-2. Completa los **12 ejercicios**.
-3. Tu progreso se guardará automáticamente. Cuando la barra alcance el 100%, haz click en **Exportar Respuestas (.json)**.
-4. Guarda el archivo descargado como `respuestas_tp5.json` en la misma carpeta del repositorio.
+2. Experimenta con los simuladores interactivos y completa los **12 ejercicios teóricos**.
+3. Tu progreso se guardará automáticamente en el navegador. Cuando la barra alcance el 100%, haz click en **Exportar Respuestas (.json)**.
+4. Guarda el archivo descargado como `respuestas_tp5.json` en la raíz de tu repositorio.
 
-### 4️⃣ Entrega y Evaluación Automática
+### 4️⃣ Resolver y Probar los Scripts de Concurrencia en Python (`ejercicios_python/`)
+Cada script dentro de `ejercicios_python/` contiene una plantilla con bloques `TODO` guiados y explicaciones teóricas:
+
+1. Completa los mecanismos de sincronización requeridos (`threading.Lock`, `threading.Semaphore`, `threading.Condition`).
+2. **Prueba cada ejercicio de manera individual** para verificar en consola la salida de los hilos:
+   ```bash
+   python ejercicios_python/ejercicio_1_sincronizacion.py
+   python ejercicios_python/ejercicio_2_oso_abejas.py
+   python ejercicios_python/ejercicio_3_filosofos.py
+   python ejercicios_python/ejercicio_4_monitores_barbero.py
+   python ejercicios_python/ejercicio_5_lectores_escritores.py
+   ```
+3. **Ejecuta la suite oficial de pruebas unitarias:**
+   ```bash
+   python test_ejercicios_python.py
+   ```
+   Esta suite valida automáticamente:
+   - ✅ Eliminación de condiciones de carrera en variables críticas.
+   - ✅ Secuenciación estricta de trazas ($A \rightarrow B \rightarrow C$).
+   - ✅ Sincronización Productor-Consumidor (tarro lleno despierta al oso y vaciado reanuda abejas).
+   - ✅ Ruptura de simetría y prevención de Deadlocks en la Cena de los Filósofos.
+   - ✅ Coordinación y condición de guarda en el monitor del Barbero Dormilón.
+   - ✅ Exclusión mutua estricta de lectores y escritores.
+
+### 5️⃣ Probar la Autoevaluación Integral en Local
+Puedes comprobar tu puntaje total antes de subir el trabajo ejecutando el evaluador de cátedra:
 ```bash
-git add respuestas_tp5.json
-git commit -m "Entrega TP5 - [Tu Nombre]"
+# Evaluación integral completa (Teoría + Código Python):
+python autograder_tp5.py
+
+# Si aún no terminaste la teoría y solo quieres probar tu código:
+python autograder_tp5.py --code-only
+```
+
+### 6️⃣ Entrega y Evaluación Automática en GitHub Classroom
+Cuando hayas completado ambas partes y las pruebas locales aprueben:
+
+```bash
+# 1. Agrega tanto tus respuestas teóricas como tus scripts de código resueltos:
+git add respuestas_tp5.json ejercicios_python/
+
+# 2. Realiza el commit:
+git commit -m "Entrega TP5 - [Tu Nombre y Apellido]"
+
+# 3. Envía los cambios a tu repositorio remoto:
 git push origin main
 ```
 
-¡Listo! Ve a la pestaña **Actions** en tu repositorio de GitHub para ver tu nota de manera inmediata. Si ves un `❌ (Cruz roja)`, lee el resumen para saber qué temas repasar.
+### 📊 Criterio de Calificación
+La nota final se pondera automáticamente de manera equitativa:
+- **50% Evaluación Conceptual:** Validada a través de `respuestas_tp5.json` (hasta 10 pts).
+- **50% Evaluación Práctica:** 5 tests automatizados en `test_ejercicios_python.py` (2 pts por ejercicio, hasta 10 pts).
+
+> 💡 **Nota:** Al hacer el `git push`, ve a la pestaña **Actions** en tu repositorio de GitHub. El workflow de GitHub Classroom correrá los tests en un runner limpio y publicará tu reporte de autograding oficial de forma inmediata. Si ves un `❌ (Cruz roja)`, revisa el resumen para corregir los fallos y vuelve a enviar un commit.
+
