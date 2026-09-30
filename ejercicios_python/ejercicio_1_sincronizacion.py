@@ -32,15 +32,21 @@ X = 199
 # sem_A = threading.Semaphore(...)
 # sem_B = threading.Semaphore(...)
 
+# 1. Define los mecanismos de sincronización necesarios:
+sem_orden_AB = threading.Semaphore(0)
+
 def proceso_A():
     global X
     # TODO: Esperar señal si corresponde
     X = X + 1
     print(f"[Parte 1] Proceso A: X = {X}")
     # TODO: Señalizar al siguiente si corresponde
+    # A ya terminó, le avisa a B que puede avanzar:
+    sem_orden_AB.release()
 
 def proceso_B():
     global X
+    sem_orden_AB.acquire()
     # TODO: Esperar señal si corresponde
     X = X // 10
     print(f"[Parte 1] Proceso B: X = {X}")
@@ -59,9 +65,9 @@ def proceso_B():
 
 # TODO PARA EL ESTUDIANTE:
 # Define con qué valor inicial deben comenzar los semáforos para que 'A' arranque primero:
-# sem_sig_A = threading.Semaphore(1)  # ¿1 para arrancar?
-# sem_sig_B = threading.Semaphore(0)
-# sem_sig_C = threading.Semaphore(0)
+sem_sig_A = threading.Semaphore(1)  
+sem_sig_B = threading.Semaphore(0)
+sem_sig_C = threading.Semaphore(0)
 
 def proceso_emisor_A(rondas=3):
     for i in range(rondas):

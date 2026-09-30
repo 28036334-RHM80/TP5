@@ -68,7 +68,23 @@ def filosofo(id, rondas=3):
         #
         # TODO: Adquiere los tenedores adyacentes de forma segura, invoca comer(id)
         # y libera los tenedores:
-        pass
+        # pass
+    # Estrategia Asimétrica para prevenir Deadlock (Espera Circular)
+        if id == NUM_FILOSOFOS - 1:
+            # El último filósofo toma primero el DERECHO y luego el IZQUIERDO
+            tenedores[tenedor_der].acquire()
+            tenedores[tenedor_izq].acquire()
+        else:
+            # Los demás toman primero el IZQUIERDO y luego el DERECHO
+            tenedores[tenedor_izq].acquire()
+            tenedores[tenedor_der].acquire()
+            
+        # Una vez que tiene ambos tenedores, puede comer
+        comer(id)
+        
+        # Soltar ambos tenedores para que otros puedan comer
+        tenedores[tenedor_izq].release()
+        tenedores[tenedor_der].release()
         # =========================================================================
         # FIN TODO
         # =========================================================================
